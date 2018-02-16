@@ -5,8 +5,8 @@ import re
 import pandas as pd
 from time import time, sleep
 from league import League
+from content import Items
 
-N_LEAGUES = 2 #keeping the top N leagues
 LEAGUES_URL = "https://www.transfermarkt.co.uk/wettbewerbe/europa/wettbewerbe"
 BASE_URL = "https://www.transfermarkt.co.uk"
 
@@ -30,26 +30,23 @@ class PageScrapper():
 
 if __name__ == "__main__":
 	scrapper = PageScrapper()
-	soup = scrapper( LEAGUES_URL)
+	soup = scrapper(LEAGUES_URL)
+	LeagueList = Items()
 	LeagueTables = soup.find("table", class_="items").find("tbody")
-	Leagues = LeagueTables.find_all("a", href=re.compile("wettbewerb/[A-Z]{2}1"), title=re.compile("\w"))
-	Leagues = Leagues[:N_LEAGUES]
+	Leagues = LeagueTables.find_all("a", href=re.compile("wettbewerb/[A-Z]{2}1"),title=[leagueItem for leagueItem in LeagueList])
 	LeagueUrlDic = { league.text : BASE_URL + league["href"] for league in Leagues}
 	print("Welcome")
-	print(LEAGUES_URL)
-	print(Leagues)
-	print(N_LEAGUES)
-	print("DONE")
+	print("Leagues That Need To Be Scraped")
+	print(LeagueUrlDic)
+	print("\n")
 	
 	for leagueName, leagueUrl in LeagueUrlDic.items():
 		print( "Scrapping the %s..." %leagueName)
 		LeaguesData = []
 		LeaguesData.append( League( leagueName, leagueUrl, scrapper))
 
-		#flattening all players information to pandas.DataFrame and exporting to csv
 
 		PlayerProfiles = [player.PlayerData for league in LeaguesData for team in league.TeamsData for player in team.PlayersData]
-
 		df = pd.DataFrame( PlayerProfiles)
-		df.to_csv(str(leagueName) +"StrikerPerformance.csv", index=False)
+		df.to_csv(str(leagueName) +".csv", index=False)
 
